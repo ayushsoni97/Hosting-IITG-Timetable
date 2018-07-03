@@ -1,0 +1,36 @@
+program for Ques10---
+
+def q10(keyword):
+	query = "CREATE TABLE IF NOT EXISTS date_counter( hashtag text, location text, count counter , PRIMARY KEY(hashtag ,  location));"
+	session.execute(query)
+	query = "CREATE TABLE IF NOT EXISTS date_count(dummy text, count int,location text , hashtag text , PRIMARY KEY(dummy, count , hashtag , location)) WITH CLUSTERING ORDER BY (count DESC);"
+	session.execute(query)
+	session.execute("TRUNCATE date_counter;")
+	session.execute("TRUNCATE date_count;")
+
+	
+	
+	query = "SELECT location , hashtag FROM q7 WHERE date ='"+keyword+"';"
+	resultset = session.execute(query)
+
+	for element in resultset:
+		if(chkLocation(element.location)):
+			query="UPDATE date_counter SET count = count + 1 WHERE location = '"+element.location+"' AND hashtag = '" + element.hashtag + "';"
+			session.execute(query)
+
+	query = "SELECT location,hashtag, count FROM date_counter;"
+	dataset = session.execute(query)
+
+	prepared = session.prepare('INSERT INTO date_count JSON ?')
+
+	for element in dataset:
+		entry={
+			"location":element.location,
+			"hashtag":element.hashtag,
+			"count":element.count,
+			"dummy":'dummy'
+		}
+		session.execute(prepared, [json.dumps(entry, indent=4, sort_keys=True, default=str)])
+
+	return session.execute("SELECT location,hashtag, count FROM date_count WHERE dummy='dummy' ;")
+	# return session.execute(query)

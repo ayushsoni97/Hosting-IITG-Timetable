@@ -1,0 +1,39 @@
+python code -- 
+def q9(keyword):
+	query = "CREATE TABLE IF NOT EXISTS loc_counter( location text, count counter , PRIMARY KEY( location));"
+	session.execute(query)
+	query = "CREATE TABLE IF NOT EXISTS loc_count(dummy text, count int,location text , PRIMARY KEY(dummy, count , location)) WITH CLUSTERING ORDER BY (count DESC);"
+	session.execute(query)
+	session.execute("TRUNCATE loc_counter;")
+	session.execute("TRUNCATE loc_count;")
+
+	
+	
+	query = "SELECT location FROM q9 WHERE hashtag='"+keyword+"';"
+	resultset = session.execute(query)
+
+	for element in resultset:
+		if(chkLocation(element.location)) :
+			query="UPDATE loc_counter SET count = count + 1 WHERE location = '"+element.location+"';"
+			session.execute(query)
+
+	query = "SELECT location, count FROM loc_counter;"
+	dataset = session.execute(query)
+
+	prepared = session.prepare('INSERT INTO loc_count JSON ?')
+
+	for element in dataset:
+		entry={
+			"location":element.location,
+			"count":element.count,
+			"dummy":'dummy'
+		}
+		session.execute(prepared, [json.dumps(entry, indent=4, sort_keys=True, default=str)])
+
+	return session.execute("SELECT location, count FROM loc_count WHERE dummy='dummy' ;")
+	# return session.execute(query)
+
+
+
+
+
